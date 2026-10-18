@@ -153,15 +153,145 @@ snowfall_plot =
 
 temperature_plot + snowfall_plot
 ```
-```
 
 Daily maximum and minimum temperatures show a strong positive relationship, with some isolated potential outliers away from the main cluster. Among snowfall observations greater than 0 and less than 100 mm, distributions are fairly similar across years, with medians around 25 mm and right-skewed distributions. Potential snowfall outliers appear in the early 2000s - 2010, with values roughly between 80 and 100 mm. Overall, the typical snowfall amount appears relatively stable across years.
 
 
+
 # Problem 2
-```{r}
+
+## Data Preparation
+Participants younger than 21 years and those missing demographic information were excluded, leaving 228 participants. Sex and education were encoded as factors. Accelerometer data were reshaped to one row per participant per minute and joined to demographic data using participant ID, retaining all originally observed information.
+
+```{r} 
+# Load and Clean Data
+covar_df =
+  read_csv("./data/nhanes_covar.csv", skip = 4) |>
+  janitor::clean_names() |>
+  filter(age >= 21) |>
+  drop_na(sex, age, bmi, education) |>
+  mutate(
+    sex = factor(
+      sex,
+      levels = c(1, 2),
+      labels = c("Male", "Female")
+    ),
+    education = factor(
+      education,
+      levels = c(1, 2, 3),
+      labels = c(
+        "Less than high school",
+        "High school equivalent",
+        "More than high school"
+      )
+    )
+  )
+
+accel_df =
+  read_csv("./data/nhanes_accel.csv") |>
+  janitor::clean_names() |>
+  pivot_longer(
+    min1:min1440,
+    names_to = "minute",
+    names_prefix = "min",
+    values_to = "mims"
+  ) |>
+  mutate(
+    minute = as.numeric(minute)
+  )
+
+nhanes_df =
+  left_join(covar_df, accel_df, by = "seqn")
+
+nhanes_df
+
+covar_df |>
+  count(education, sex) |>
+  pivot_wider(
+    names_from = sex,
+    values_from = n
+  ) |>
+  knitr::kable(
+    col.names = c("Education", "Men", "Women")
+  )
+
 
 ```
+
+The largest education group is those with more than a high school education (56 men, 59 women, 115 total). Numbers of men and women are similar within this group and among those with less than a high school education. Among those with a high school equivalent education, there are more men (35) than women (23).
+
+## Age Distribution Plot
+```{r}
+covar_df |>
+  ggplot(aes(x = sex, y = age, fill = sex)) +
+  geom_boxplot() +
+  facet_grid(~ education) +
+  labs(
+    title = "Age distributions by sex and education",
+    x = "Sex",
+    y = "Age (years)"
+  ) +
+  theme(legend.position = "none")
+```
+
+Participants with more than a high school education tend to be younger, with median ages in the early 40s for both men and women. Among those with less than a high school education, median ages are around 60 years for both men and women. In the high school equivalent group, women have a higher median age than men, approximately 62 versus 53 years, respectively. Age distributions overlap across all groups.
+
+## Total Daily Activity Versus Age Plot
+```{r}
+total_activity_df =
+  nhanes_df |>
+  group_by(seqn, sex, age, bmi, education) |>
+  summarize(
+    total_activity = sum(mims)
+  ) |>
+  ungroup()
+
+total_activity_df |>
+  ggplot(aes(x = age, y = total_activity, color = sex)) +
+  geom_point(alpha = .5) +
+  geom_smooth(se = FALSE) +
+  facet_grid(~ education) +
+  labs(
+    title = "Total daily activity and age",
+    x = "Age (years)",
+    y = "Total daily activity (MIMS)",
+    color = "Sex"
+  )
+```
+
+Total daily activity generally decreases with age across education groups, although there is quite a bit of variation among participants of similar ages. Women tend to have higher activity than men across much of adulthood in those with a high school equivalent or more than high school education. This difference is less consistent among those with less than a high school education. At older ages (60+), the curves tend to converge toward lower overall activity. There appear to be some potential outliers, especially the man in his late 30s with more than a high school education who had very low total daily activity, nearly zero.
+
+## Activity Over 24-Hour Day
+```{r }
+activity_time_df =
+  nhanes_df |>
+  mutate(
+    hour = (minute - 1) / 60
+  ) |>
+  group_by(education, sex, hour) |>
+  summarize(
+    mean_mims = mean(mims, na.rm = TRUE)
+  ) |>
+  ungroup()
+
+activity_time_df |>
+  ggplot(aes(x = hour, y = mean_mims, color = sex)) +
+  geom_line(alpha = .3) +
+  geom_smooth(se = FALSE) +
+  facet_grid(~ education) +
+  scale_x_continuous(
+    breaks = c(0, 6, 12, 18, 24),
+    limits = c(0, 24)
+  ) +
+  labs(
+    title = "Activity over the 24-hour day",
+    x = "Hour of day",
+    y = "Mean activity (MIMS)",
+    color = "Sex"
+  )
+```
+
+Activity follows a similar pattern across education groups, with a trough overnight, a sharp increase in the morning, and a decline in the evening. Women tend to have higher daytime activity among those with a high school equivalent or more than a high school education, especially in the latter group. These differences are smaller among individuals with less than a high school education. Peaks also differ across education groups, with a higher midday peak (~15 MIMS) among those with less than a high school education, followed by a steady decline. Meanwhile, those with a high school equivalent or more than a high school education show a sharp increase around 6-8 AM and maintain a fairly stable daytime plateau until approximately 6-8 PM before declining.
 
 
 # Problem 3
