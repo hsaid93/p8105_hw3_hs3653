@@ -1,0 +1,38 @@
+---
+title: "p8105_hw3_hs3653"
+author: "Hyder Said"
+date: "2026-10-18"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(p8105.datasets)
+library(patchwork)
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+```
+
+# Problem 1
+
+```{r}
+
+```
+
+
+# Problem 2
+```{r}
+
+```
+
+
+# Problem 3
+```{r}
+
+```
