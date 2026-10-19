@@ -267,16 +267,11 @@ activity_time_df =
   nhanes_df |>
   mutate(
     hour = (minute - 1) / 60
-  ) |>
-  group_by(education, sex, hour) |>
-  summarize(
-    mean_mims = mean(mims, na.rm = TRUE)
-  ) |>
-  ungroup()
+  )
 
 activity_time_df |>
-  ggplot(aes(x = hour, y = mean_mims, color = sex)) +
-  geom_line(alpha = .3) +
+  ggplot(aes(x = hour, y = mims, color = sex)) +
+  geom_point(alpha = .01) +
   geom_smooth(se = FALSE) +
   facet_grid(~ education) +
   scale_x_continuous(
@@ -286,12 +281,12 @@ activity_time_df |>
   labs(
     title = "Activity over the 24-hour day",
     x = "Hour of day",
-    y = "Mean activity (MIMS)",
+    y = "Activity (MIMS)",
     color = "Sex"
   )
 ```
 
-Activity follows a similar pattern across education groups, with a trough overnight, a sharp increase in the morning, and a decline in the evening. Women tend to have higher daytime activity among those with a high school equivalent or more than a high school education, especially in the latter group. These differences are smaller among individuals with less than a high school education. Peaks also differ across education groups, with a higher midday peak (~15 MIMS) among those with less than a high school education, followed by a steady decline. Meanwhile, those with a high school equivalent or more than a high school education show a sharp increase around 6-8 AM and maintain a fairly stable daytime plateau until approximately 6-8 PM before declining.
+Activity follows a similar pattern across education groups, with a trough overnight, a sharp increase in the morning, and a decline in the evening. Women tend to have slightly higher daytime activity among those with more than a high school education, while sex differences are smaller in the other groups. Peaks also differ across education groups, with a higher late-morning peak in the smoothed trends among those with less than a high school education, followed by a steady decline. Meanwhile, those with a high school equivalent or more than a high school education maintain a fairly stable daytime plateau until approximately 6-8 PM before declining. There is considerable variation in minute-level activity, with some particularly high values among those with more than a high school education, including high values around 8-9 AM and 7-8 PM. These may reflect brief periods of intense activity rather than recording errors.
 
 
 # Problem 3
